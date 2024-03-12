@@ -2,6 +2,7 @@
 
 import matplotlib.pyplot as plt
 import streamlit as st
+import altair as alt
 import fastf1 as f1
 
 venue = st.selectbox("Select a venue", ["Bahrain"])
@@ -21,28 +22,43 @@ if st.button("Show"):
 
 if 'laps' in st.session_state:
     
+    laps = st.session_state['laps']
     drivers = st.multiselect("Select drivers", list(laps['Driver'].unique()), max_selections=2)
 
-if len(drivers) == 0:
-    st.error("Please select at least one driver")
-else:
-    st.write(f"Selected drivers: {drivers}")
+    if len(drivers) == 2:
+        st.session_state['drivers'] = drivers
+    else:
+        st.warning("Please select two drivers")
+        st.session_state['drivers'] = None
+        st.session_state.pop('drivers', None)
 
-    dr1 = drivers[0]
-    dr2 = drivers[1]
 
-    dr1_laps = laps.loc[laps['Driver']==dr1]
-    dr2_laps = laps.loc[laps['Driver']==dr2]
+if 'drivers' in st.session_state:
 
-    dr1_laps.reset_index(drop=True, inplace=True)
-    dr2_laps.reset_index(drop=True, inplace=True)
+    # driver = st.session_state['drivers'][0]
+    # laps = st.session_state['laps']
+    # laps = laps.reset_index(drop=True)
+    # laps['LapTime'] = laps['LapTime'].dt.total_seconds()
+    # laps['LapTime'] = laps.apply(lambda x: None if x['IsAccurate'] == False else x['LapTime'], axis=1)
 
-    dr1_laps['LapTime'] = dr1_laps['LapTime'].apply(lambda x: x.total_seconds())
-    dr2_laps['LapTime'] = dr2_laps['LapTime'].apply(lambda x: x.total_seconds())
+    # driver_laps = laps.loc[laps['Driver'] == driver]
+    # chart = alt.Chart(driver_laps).mark_line().encode(alt.Y('LapTime').scale(zero=False),
+    #                                                   x='LapNumber',
+    #                                                   color='Stint').properties(width=800, height=400)
+    # st.altair_chart(chart)
 
-    dr1_laps['LapTime'] = dr1_laps.apply(lambda x: None if x['IsAccurate']==False else x['LapTime'], axis=1)
-    dr2_laps['LapTime'] = dr2_laps.apply(lambda x: None if x['IsAccurate']==False else x['LapTime'], axis=1)
+    drivers = st.session_state['drivers']
+    laps = st.session_state['laps']
+    laps = laps.reset_index(drop=True)
+    laps['LapTime'] = laps['LapTime'].dt.total_seconds()
+    laps['LapTime'] = laps.apply(lambda x: None if x['IsAccurate'] == False else x['LapTime'], axis=1)
 
-    st.line_chart(dr1_laps['LapTime'])
-    st.line_chart(dr2_laps['LapTime'])
+    for driver in drivers:
+        driver_laps = laps.loc[laps['Driver'] == driver]
+        chart = alt.Chart(driver_laps).mark_line().encode(alt.Y('LapTime').scale(zero=False),
+                                                          x='LapNumber',
+                                                          color='Stint').properties(width=800, height=400)
+        st.altair_chart(chart)
+
+
 
